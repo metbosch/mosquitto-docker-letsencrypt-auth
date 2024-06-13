@@ -1,5 +1,5 @@
-FROM python:3-alpine3.13
-LABEL maintainer synoniem https://github.com/synoniem
+FROM python:3.12-alpine3.20
+LABEL maintainer metbosch https://github.com/metbosch
 
 # Set environment variables.
 ENV TERM=xterm-color
@@ -18,18 +18,32 @@ RUN \
 	apk add \
 		bash \
 		coreutils \
-		nano \
-        vim \
 		curl \
-        py3-crypto \
+		py3-crypto \
 		ca-certificates \
-        certbot \
+		certbot \
 		mosquitto \
-		mosquitto-clients && \
+		mosquitto-clients \
+		mosquitto-dev \
+		make \
+		sed \
+		go && \
 	rm -f /var/cache/apk/* && \
-    rm /build_internal.sh && \
+	rm /build_internal.sh && \
 	pip install --upgrade pip && \
 	pip install pyRFC3339 configobj ConfigArgParse
+
+# Download, build and install the mosquitto-go-auth plugin
+# Its Makefile requires a fix to add -D_LARGEFILE64_SOURCE in order to fix a compile issue
+RUN wget https://github.com/iegomez/mosquitto-go-auth/archive/refs/tags/2.1.0.zip && \
+	unzip 2.1.0.zip && \
+	cd mosquitto-go-auth-2.1.0 && \
+	sed -i '/^CFLAGS :=/ s/$/ -D_LARGEFILE64_SOURCE/' Makefile && \
+	sed -i 's/env CGO_LDFLAGS="$(LDFLAGS)"/env CGO_LDFLAGS="$(LDFLAGS)" CGO_CFLAGS="$(CFLAGS)"/g' Makefile && \
+	make && \
+	cp go-auth.so go-auth.h /mosquitto/ && \
+	cd - && \
+	rm -rf mosquito-go-auth-2.1.0 mosquito-go-auth-2.1.0.zip
 
 COPY etc /etc
 COPY certbot.sh /certbot.sh
