@@ -1,6 +1,6 @@
 #!/bin/sh
 # Build script for s6-overlay with processor architecture detection
-apkArch=`apk --print-arch`
+apkArch=`dpkg --print-architecture`
 if [ $apkArch = "x86_64" ] 
 then
     apkArch="amd64"

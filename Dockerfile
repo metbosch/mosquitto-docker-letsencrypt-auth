@@ -1,4 +1,4 @@
-FROM python:3.12-alpine3.20
+FROM python:3.12
 LABEL maintainer metbosch https://github.com/metbosch
 
 # Set environment variables.
@@ -13,22 +13,23 @@ RUN \
 	mkdir /mosquitto && \
 	mkdir /mosquitto/log && \
 	mkdir /mosquitto/conf && \
-	apk update && \
-	apk upgrade && \
-	apk add \
+	apt update && \
+	apt upgrade && \
+	apt install -y \
 		bash \
 		coreutils \
 		curl \
-		py3-crypto \
 		ca-certificates \
 		certbot \
 		mosquitto \
 		mosquitto-clients \
+		libmosquitto-dev \
 		mosquitto-dev \
 		make \
 		sed \
-		go && \
-	rm -f /var/cache/apk/* && \
+		golang \
+		python3-cryptography && \
+	rm -rf /var/cache/apt/* && \
 	rm /build_internal.sh && \
 	pip install --upgrade pip && \
 	pip install pyRFC3339 configobj ConfigArgParse
@@ -38,8 +39,6 @@ RUN \
 RUN wget https://github.com/iegomez/mosquitto-go-auth/archive/refs/tags/2.1.0.zip && \
 	unzip 2.1.0.zip && \
 	cd mosquitto-go-auth-2.1.0 && \
-	sed -i '/^CFLAGS :=/ s/$/ -D_LARGEFILE64_SOURCE/' Makefile && \
-	sed -i 's/env CGO_LDFLAGS="$(LDFLAGS)"/env CGO_LDFLAGS="$(LDFLAGS)" CGO_CFLAGS="$(CFLAGS)"/g' Makefile && \
 	make && \
 	cp go-auth.so go-auth.h /mosquitto/ && \
 	cd - && \
