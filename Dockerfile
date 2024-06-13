@@ -18,6 +18,7 @@ RUN \
 	apt install -y \
 		bash \
 		coreutils \
+		cron \
 		curl \
 		ca-certificates \
 		certbot \

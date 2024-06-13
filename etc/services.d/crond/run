@@ -1,2 +1,2 @@
 #!/usr/bin/execlineb -P
-/usr/sbin/crond -f -l 8 -d 6
+/usr/sbin/cron -f -L 8
