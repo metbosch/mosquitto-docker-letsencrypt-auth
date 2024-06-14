@@ -1,18 +1,13 @@
-# alpine-mosquitto-certbot
-2022-11-19 For a even more easy way to run a Mosquitto MQTT server take a look at my docker-compose script at [mosquitto-traefik-letsencrypt](https://github.com/synoniem/mosquitto-traefik-letsencrypt.git) with Traefik and Let's Encrypt.
+# mosquitto-docker-letsencrypt-auth
 
+This repository integrates into a single Docker image the following:
+ - [Mosquitto MQTT server](https://mosquitto.org/).
+ - [Certbot](https://certbot.eff.org/) on top of python (debian based) image.
+ - [Go auth plugin](https://github.com/iegomez/mosquitto-go-auth) to authenticate against several backends.
 
-<span style="color:red">Warning!</span> This build uses Alpine 3.13 which requires you to update libseccomp on your dockerhost to 2.4.2 or newer and Docker to 19.03.9 or newer.
-
-An automated build that integrates the [Mosquitto MQTT server](https://mosquitto.org/) with [Certbot](https://certbot.eff.org/) on top of [Alpine linux](https://www.alpinelinux.org/).
-This repo is a reworked version from saberone/mosquitto-docker-letsencrypt. It is now using a [Just Containers s6-overlay](https://github.com/just-containers/s6-overlay) as a init system.
-
-As the Internet of Things (IoT) world rapidly grows and evolves, developers need a simple and secure way to implement peer-to-peer and peer-to-server (backend) communications.  MQTT is a relatively simple message/queue-based protocol that provides exactly that. 
-Unfortunately, there are a ton of Docker images available for brokers, e.g. eclipse-mosquitto; but, nearly all of them leave it up to the user to figure out how to secure the platform.  This results in many developers simply ignoring security altogether for the sake of simplicity.  Even more dangerous, many semi-technical home owners are now dabbling in the home automation space and due to the complexity of securing system, they are hanging IoT/automation devices on the internet completely unsecurred.
-
-This docker image attempts to make it easier to implement a secure MQTT broker, either in the cloud or on premise.  The secured broker can be used with home automation platforms like [Home Assistant](https://home-assistant.io/) or simply as a means of enabling secure IoT device communications.
-
-For those interested in some of the nuts and bolts related to the integration, reference [Brian Boucheron's](https://www.digitalocean.com/community/users/bboucheron) excellent article [How to Install and Secure the Mosquitto MQTT Messaging Broker on Ubuntu 16.04](https://www.digitalocean.com/community/tutorials/how-to-install-and-secure-the-mosquitto-mqtt-messaging-broker-on-ubuntu-16-04) which servered as a reference in creating this image.
+The repository is based on the great work previously done by:
+ - [synoniem](https://github.com/synoniem/mosquitto-docker-letsencrypt)
+ - [iegomez](https://github.com/iegomez/mosquitto-go-auth)
 
 ## Setting up a MQTT server
 
@@ -25,12 +20,10 @@ docker network create backend-net
 Here is a sample [docker-compose.yml](https://docs.docker.com/compose/compose-file/) file:
 
 ```
-version: '2'
+version: '3'
 services:
   mqtt:
     image: synoniem/alpine-mosquitto-certbot
-    networks:
-      - backend-net
     ports:
       - 1883:1883
       - 8083:8083
@@ -40,15 +33,12 @@ services:
       - DOMAIN=mqtt.example.org
       - EMAIL=info@example.org
     volumes:
+      - ./mosquitto/auth/:/mosquitto/auth
+      - ./mosquitto/certs/:/mosquitto/certs
       - ./mosquitto/conf/:/mosquitto/conf
       - ./mosquitto/log/:/mosquitto/log
       - ./letsencrypt:/etc/letsencrypt
-    container_name: mqtt
     restart: always
-networks:
-  backend-net:
-    external:
-      name: backend-net
 ```
 
 In this case, four ports are exposed, which we'll go over in more detail when describing how this configuration matches that of the mosquitto.conf file.  The first three ports are associated with Mosquitto, the forth port mapping (80:80) allows Certbot/LetsEncrypt to verify the DOMAIN.  
@@ -68,6 +58,10 @@ There are three environment variables useable with this image.  DOMAIN and EMAIL
 The scripts associated with this image assume a standard directory structure for mosquitto configuration and certbot/LetsEncrypt.  It is possible to deviate from the below defined standard, but doing so should be left to those more familiar with Docker and Mosquitto.
 
 ```
+/mosquitto/auth/
+	acls
+	passwd
+/mosquitto/certs/
 /mosquitto/conf/
 	mosquitto.conf
 	passwd
@@ -82,11 +76,19 @@ chown -R 100:101 ./mosquitto
 
 The docker-compose.yml file shown above maps local (persistent) directories to the relevant container volumes:
 
+**/mosquitto/auth** - This directory is the location where go-auth will get passwords and acls.  Its use is optional (depends on enabled auth) and can be controlled based on the contents of mosquitto.conf.
+
+**/mosquitto/auth/acls** - This is the ACLs file where topic access is defined for each user.
+
+**/mosquitto/auth/passwd** - This is the passwords file where credentials for each user are defined.
+
+**/mosquitto/certs** - This directory is the location where mosquitto will get certificate files. The files are copied there after each certbot invocation with the right access permissions for mosquitto daemon.
+
 **/mosquitto/conf/** - this directory is where Mosquitto will look for the mosquitto.conf file.
 
 **/mosquitto/conf/mosquitto.conf** - this file is user supplied.  The startup scripts will look for exactly this file in exactly this directory. If it isn't found, it will be copied from the at buildtime edited /etc/mosquitto/mosquitto.conf.
 
-**/mosquitto/conf/passwd** - this file is the standard location for Mosquitto users/passwords.  An alternate file/location can be specified in mosquitto.conf, but it must be in a location persisted through docker volume mapping.  It's presence/use is optional, but allowing anonymous access to MQTT somewhat defeats the purpose of this image.
+**/mosquitto/conf/passwd** - this file is the standard location for Mosquitto users/passwords. It's not used in the provided example, as auth goes through go-auth plugin.
 
 **/mosquitto/log** - This directory is the location where mosquitto will place log file(s).  Like passwd defined above, its use is optional and can be controlled based on the contents of mosquitto.conf.
 
@@ -109,86 +111,11 @@ Documentation for Mosquitto should be consulted for details on how to properly c
 
  Anonymous access to the server is disabled, indicating all connections must be validated via user id/password.
 
-```
-# Config file for mosquitto
-#
-# See mosquitto.conf(5) for more information.
-#
-
-# =================================================================
-# General configuration
-# =================================================================
-
-# When run as root, drop privileges to this user and its primary 
-# group.
-# Leave blank to stay as root, but this is not recommended.
-# If run as a non-root user, this setting has no effect.
-# Note that on Windows this has no effect and so mosquitto should 
-# be started by the user you wish it to run as.
-user mosquitto
-
-# =================================================================
-# Default listener
-# =================================================================
-
-listener 1883
-protocol mqtt
-
-# =================================================================
-# Extra listeners
-# =================================================================
-
-listener 8083
-protocol websockets 
-cafile /etc/letsencrypt/live/mqtt.example.org/chain.pem
-certfile /etc/letsencrypt/live/mqtt.example.org/fullchain.pem
-keyfile /etc/letsencrypt/live/mqtt.example.org/privkey.pem
-
-listener 8883
-protocol mqtt
-cafile /etc/letsencrypt/live/mqtt.example.org/chain.pem
-certfile /etc/letsencrypt/live/mqtt.example.org/fullchain.pem
-keyfile /etc/letsencrypt/live/mqtt.example.org/privkey.pem
-
-# =================================================================
-# Logging
-# =================================================================
-
-log_dest file /mosquitto/log/mosquitto.log
-log_type warning
-websockets_log_level 255
-connection_messages true
-log_timestamp true
-
-# =================================================================
-# Security
-# =================================================================
-
-allow_anonymous false
-
-# -----------------------------------------------------------------
-# Default authentication and topic access control
-# -----------------------------------------------------------------
-
-# Control access to the broker using a password file. This file can be
-# generated using the mosquitto_passwd utility. 
-password_file /mosquitto/conf/passwd
-```
+See [mosquitto/conf/mosquitto.conf](https://github.com/metbosch/mosquitto-docker-letsencrypt-auth/blob/master/mosquitto/conf/mosquitto.conf) for a configuration example.
 
 ## Generating User ID/Password
 
-Mosquitto provides a utility (mosquitto_passwd) for adding users to a password file with encrypted passwords.  Assuming the passwd file is in the standard location as shown in the mosquitto.conf file above, you can add a user/password combination (e.g. firstuser firstPwd) to the file once the docker container is up and running, using the following command:
-
-```
-docker exec -it mqtt mosquitto_passwd -b /mosquitto/conf/passwd firstuser firstPwd
-```
-
-This command doesn't provide any feedback if successful, but does show errors if there are problems.  You can verify success simply looking in the passwd file.  You should see an entry similar to: firstuser:$6$+NKkI0p3oZmSukn9$mOUEEHUizK2zqc8Hk2l0JlHHXTW8GPzSonP9Ujrjhs1tVNQqN3lGCAFcFKnpJefOjUPwjqE5mZqSjBl6BCKnPA==
-
-After adding users you should reload the mosquitto server with the following command:
-```
-docker exec -it mqtt /restart.sh
-```
+To add more credentials, refer to [go-auth repository](https://github.com/iegomez/mosquitto-go-auth). The options change base on enabled type.
 
 ## Testing Your Server
 
