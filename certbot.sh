@@ -45,7 +45,8 @@ else
                                         --preferred-challenges http-01 \
                                         -n \
                                         -d $DOMAIN \
-                                        -m $EMAIL
+                                        -m $EMAIL \
+					--post-hook "/restart.sh"
                         else
                                 echo "Obtaining cert for $DOMAIN"
                                 certbot certonly \
@@ -54,7 +55,8 @@ else
                                         --preferred-challenges http-01 \
                                         -n \
                                         -d $DOMAIN \
-                                        -m $EMAIL
+                                        -m $EMAIL \
+					--post-hook "/restart.sh"
                         fi
                 else
                         echo 'ERROR: $EMAIL must be defined'

@@ -41,7 +41,8 @@ RUN wget https://github.com/iegomez/mosquitto-go-auth/archive/refs/tags/2.1.0.zi
 	unzip 2.1.0.zip && \
 	cd mosquitto-go-auth-2.1.0 && \
 	make && \
-	cp go-auth.so go-auth.h /mosquitto/ && \
+	chmod +x pw && \
+	cp go-auth.so go-auth.h pw /mosquitto/ && \
 	cd - && \
 	rm -rf mosquito-go-auth-2.1.0 mosquito-go-auth-2.1.0.zip
 
