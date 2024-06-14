@@ -1,9 +1,7 @@
 version: '2'
 services:
   mqtt:
-    image: synoniem/alpine-mosquitto-certbot
-    networks:
-      - backend-net
+    image: metbosch/mosquitto-docker-letsencrypt-auth
     ports:
       - 1883:1883
       - 8083:8083
@@ -16,8 +14,4 @@ services:
       - ./mosquitto/conf/:/mosquitto/conf
       - ./mosquitto/log/:/mosquitto/log
       - ./letsencrypt:/etc/letsencrypt
-    container_name: mqtt
     restart: always
-networks:
-  backend-net:
-    external: false

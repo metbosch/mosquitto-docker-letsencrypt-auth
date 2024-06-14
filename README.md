@@ -23,7 +23,7 @@ Here is a sample [docker-compose.yml](https://docs.docker.com/compose/compose-fi
 version: '3'
 services:
   mqtt:
-    image: synoniem/alpine-mosquitto-certbot
+    image: metbosch/mosquitto-docker-letsencrypt-auth
     ports:
       - 1883:1883
       - 8083:8083
