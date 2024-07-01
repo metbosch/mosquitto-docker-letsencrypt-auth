@@ -45,13 +45,15 @@ In this case, four ports are exposed, which we'll go over in more detail when de
 
 ## Environment Variables
 
-There are three environment variables useable with this image.  DOMAIN and EMAIL are required for Certbot/[Letsencrypt](https://letsencrypt.org/) to obtain certificates necessary for secure communications.  The third, TESTCERT, is optional.
+There are 4 environment variables useable with this image. 
 
-**DOMAIN** - This should be defined as your fully qualified domain name, i.e. mqtt.myserver.com.  The domain needs to point to your server as LetsEncrypt will verify such when obtaining certificates. The domain name will automatically be inserted in the mosquitto.conf file to point to the certificate files Certbot retrieved.
+**DOMAIN** [REQUIRED] - This should be defined as your fully qualified domain name, i.e. mqtt.myserver.com.  The domain needs to point to your server as LetsEncrypt will verify such when obtaining certificates. The domain name will automatically be inserted in the mosquitto.conf file to point to the certificate files Certbot retrieved.
 
-**EMAIL** - This simply needs to be an email address. It's required by certbot/LetsEncrypt to obtain certificates.
+**EMAIL** [REQUIRED] - This simply needs to be an email address. It's required by certbot/LetsEncrypt to obtain certificates.
 
-**TESTCERT** - This variable can be set to any value (e.g. TRUE).  When defined, the image will utilize certbot/LetsEncrypt --staging server and obtain non-valid test-certs.  It will also use --dry-run when simulating certificate renewal.  The variable's utility is in the fact that it enables the user to configure and test/debug the process of obtaining certificates without running into the fairly low hourly limits imposed by LetsEncrypt.  Example: If the service is configured correctly, but the server isn't reachable on port 80 due to an incorrectly configured firewall, TESTCERT defined will reveal this fact without attempting to obtain a real certificate.
+**TESTCERT** [OPTIONAL] - This variable can be set to any value (e.g. TRUE).  When defined, the image will utilize certbot/LetsEncrypt --staging server and obtain non-valid test-certs.  It will also use --dry-run when simulating certificate renewal.  The variable's utility is in the fact that it enables the user to configure and test/debug the process of obtaining certificates without running into the fairly low hourly limits imposed by LetsEncrypt.  Example: If the service is configured correctly, but the server isn't reachable on port 80 due to an incorrectly configured firewall, TESTCERT defined will reveal this fact without attempting to obtain a real certificate.
+
+**CERTBOT_ARGS** [OPTIONAL] - Extra arguments for certbot commands (e.g. `--key-type rsa --rsa-key-size 4096`).
 
 ## Volumes (persistence)
 

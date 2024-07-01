@@ -27,17 +27,17 @@ if [ -d "$FOLDER" ]; then
         echo "Certificates exist, attempting to renew..."
         if [ ! -z "$TESTCERT" ]; then
                 echo "Renew dry run ..."
-                certbot renew --dry-run --noninteractive --post-hook "/restart.sh"
+                certbot renew $CERTBOT_ARGS --dry-run --noninteractive --post-hook "/restart.sh"
         else
                 echo "Renew certs ..."
-                certbot renew --noninteractive --post-hook "/restart.sh"
+                certbot renew $CERTBOT_ARGS --noninteractive --post-hook "/restart.sh"
         fi
 else
         if [ ! -z "$DOMAIN" ]; then
                 if [ ! -z "$EMAIL" ]; then
                         if [ ! -z "$TESTCERT" ]; then
                                 echo "Obtaining TEST cert for $DOMAIN"
-                                certbot certonly \
+                                certbot certonly $CERTBOT_ARGS \
                                         --staging \
                                         --test-cert \
                                         --standalone \
@@ -49,7 +49,7 @@ else
 					--post-hook "/restart.sh"
                         else
                                 echo "Obtaining cert for $DOMAIN"
-                                certbot certonly \
+                                certbot certonly $CERTBOT_ARGS \
                                         --standalone \
                                         --agree-tos \
                                         --preferred-challenges http-01 \
