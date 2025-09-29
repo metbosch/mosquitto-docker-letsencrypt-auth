@@ -1,5 +1,12 @@
 #!/bin/bash
 
+DOMAIN="$1"
+
+if [ -z "$DOMAIN" ]; then
+	echo "Usage: $0 <domain>"
+	exit 1
+fi
+
 ## Copy certificates to /mosquitto
 cp -v /etc/letsencrypt/live/${DOMAIN}/chain.pem /mosquitto/certs/chain.pem
 cp -v /etc/letsencrypt/live/${DOMAIN}/fullchain.pem /mosquitto/certs/fullchain.pem

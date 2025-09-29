@@ -27,10 +27,10 @@ if [ -d "$FOLDER" ]; then
         echo "Certificates exist, attempting to renew..."
         if [ ! -z "$TESTCERT" ]; then
                 echo "Renew dry run ..."
-                certbot renew $CERTBOT_ARGS --dry-run --noninteractive --post-hook "/restart.sh"
+                certbot renew $CERTBOT_ARGS --dry-run --noninteractive --post-hook "/restart.sh $DOMAIN"
         else
                 echo "Renew certs ..."
-                certbot renew $CERTBOT_ARGS --noninteractive --post-hook "/restart.sh"
+                certbot renew $CERTBOT_ARGS --noninteractive --post-hook "/restart.sh $DOMAIN"
         fi
 else
         if [ ! -z "$DOMAIN" ]; then
@@ -46,7 +46,7 @@ else
                                         -n \
                                         -d $DOMAIN \
                                         -m $EMAIL \
-					--post-hook "/restart.sh"
+					--post-hook "/restart.sh $DOMAIN"
                         else
                                 echo "Obtaining cert for $DOMAIN"
                                 certbot certonly $CERTBOT_ARGS \
@@ -56,7 +56,7 @@ else
                                         -n \
                                         -d $DOMAIN \
                                         -m $EMAIL \
-					--post-hook "/restart.sh"
+					--post-hook "/restart.sh $DOMAIN"
                         fi
                 else
                         echo 'ERROR: $EMAIL must be defined'
