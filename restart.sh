@@ -17,5 +17,6 @@ chown mosquitto: /mosquitto/certs/chain.pem /mosquitto/certs/fullchain.pem /mosq
 chmod 0600 /mosquitto/certs/chain.pem /mosquitto/certs/fullchain.pem /mosquitto/certs/privkey.pem
 
 if [ -e /var/run/s6/services/mosquitto ]; then
+	echo "Going to restart mosquitto service..."
 	/bin/s6-svc -r /var/run/s6/services/mosquitto
 fi
